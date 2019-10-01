@@ -508,10 +508,19 @@ dimentio(uint64_t nonce) {
 							printf("os_string: " KADDR_FMT "\n", os_string);
 							if(kread_addr(os_string + OS_STRING_STRING_OFF, &string_ptr) == KERN_SUCCESS && string_ptr) {
 								printf("string_ptr: " KADDR_FMT "\n", string_ptr);
-								snprintf(nonce_hex, sizeof(nonce_hex), "0x%016" PRIx64, nonce);
-								if(kwrite_buf(string_ptr, nonce_hex, sizeof(nonce_hex)) == KERN_SUCCESS && sync_nonce(nvram_serv) == KERN_SUCCESS) {
-									printf("Set nonce to 0x%016" PRIx64 "\n", nonce);
+
+								if(!nonce)
+								{
+									kread_buf(string_ptr, &nonce_hex, sizeof(nonce_hex));
+									printf("Generator: %s\n", nonce_hex);
+								}else{
+									snprintf(nonce_hex, sizeof(nonce_hex), "0x%016" PRIx64, nonce);
+									if(kwrite_buf(string_ptr, nonce_hex, sizeof(nonce_hex)) == KERN_SUCCESS && sync_nonce(nvram_serv) == KERN_SUCCESS) {
+										printf("Set nonce to 0x%016" PRIx64 "\n", nonce);
+									}
 								}
+
+
 							}
 						}
 					}
@@ -544,30 +553,34 @@ main(int argc, char **argv) {
 	kaddr_t kbase, kslide;
 	pfinder_t pfinder;
 	uint32_t key[4];
-	uint64_t nonce;
+	uint64_t nonce = 0;
 
-	if(argc > 1 && sscanf(argv[1], "0x%016" PRIx64, &nonce) == 1) {
-		if(init_arm_pgshift() == KERN_SUCCESS) {
-			printf("arm_pgshift: %u\n", arm_pgshift);
-			if(init_tfp0() == KERN_SUCCESS) {
-				printf("tfp0: 0x%" PRIx32 "\n", tfp0);
-				if((kbase = get_kbase(&kslide))) {
-					printf("kbase: " KADDR_FMT "\n", kbase);
-					printf("kslide: " KADDR_FMT "\n", kslide);
-					if(pfinder_init(&pfinder, kbase) == KERN_SUCCESS) {
-						if(pfinder_init_offsets(pfinder) == KERN_SUCCESS) {
-							dimentio(nonce);
-							if(argc == 3 && sscanf(argv[2], "0x%08" PRIx32 "%08" PRIx32 "%08" PRIx32 "%08" PRIx32, &(key[0]), &(key[1]), &(key[2]), &(key[3])) == 4) {
-								entangle_nonce(nonce, key);
+
+	if(init_arm_pgshift() == KERN_SUCCESS) {
+		printf("arm_pgshift: %u\n", arm_pgshift);
+		if(init_tfp0() == KERN_SUCCESS) {
+			printf("tfp0: 0x%" PRIx32 "\n", tfp0);
+			if((kbase = get_kbase(&kslide))) {
+				printf("kbase: " KADDR_FMT "\n", kbase);
+				printf("kslide: " KADDR_FMT "\n", kslide);
+				if(pfinder_init(&pfinder, kbase) == KERN_SUCCESS) {
+					if(pfinder_init_offsets(pfinder) == KERN_SUCCESS) {
+						if(argc == 3 && sscanf(argv[2], "0x%08" PRIx32 "%08" PRIx32 "%08" PRIx32 "%08" PRIx32, &(key[0]), &(key[1]), &(key[2]), &(key[3])) == 4) {
+							entangle_nonce(nonce, key);
+						}	else{
+							if(argc > 1){
+								sscanf(argv[1], "0x%016" PRIx64, &nonce);
 							}
+							dimentio(nonce);
 						}
-						pfinder_term(&pfinder);
 					}
+					pfinder_term(&pfinder);
 				}
-				mach_port_deallocate(mach_task_self(), tfp0);
 			}
+			mach_port_deallocate(mach_task_self(), tfp0);
 		}
-	} else {
-		printf("Usage: %s nonce [key_8a3]\n", argv[0]);
 	}
+
+
+
 }
