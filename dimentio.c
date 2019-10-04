@@ -565,13 +565,14 @@ main(int argc, char **argv) {
 				printf("kslide: " KADDR_FMT "\n", kslide);
 				if(pfinder_init(&pfinder, kbase) == KERN_SUCCESS) {
 					if(pfinder_init_offsets(pfinder) == KERN_SUCCESS) {
-						if(argc == 3 && sscanf(argv[2], "0x%08" PRIx32 "%08" PRIx32 "%08" PRIx32 "%08" PRIx32, &(key[0]), &(key[1]), &(key[2]), &(key[3])) == 4) {
+						if(argc > 1)
+						{
+							sscanf(argv[1], "0x%016" PRIx64, &nonce);
+						}
+						dimentio(nonce);
+						if(argc == 3 && sscanf(argv[2], "0x%08" PRIx32 "%08" PRIx32 "%08" PRIx32 "%08" PRIx32, &(key[0]), &(key[1]), &(key[2]), &(key[3])) == 4)
+						{
 							entangle_nonce(nonce, key);
-						}	else{
-							if(argc > 1){
-								sscanf(argv[1], "0x%016" PRIx64, &nonce);
-							}
-							dimentio(nonce);
 						}
 					}
 					pfinder_term(&pfinder);
