@@ -498,7 +498,15 @@ dimentio(uint64_t nonce) {
 		printf("our_task: " KADDR_FMT "\n", our_task);
 		if((nonce_serv = get_serv("AppleMobileApNonce")) != IO_OBJECT_NULL) {
 			printf("nonce_serv: 0x%" PRIx32 "\n", nonce_serv);
-			if(nonce_generate(nonce_serv) == KERN_SUCCESS && get_boot_nonce_os_symbol(nonce_serv, &boot_nonce_os_symbol) == KERN_SUCCESS) {
+			if(nonce)
+			{
+				if(nonce_generate(nonce_serv) == KERN_FAILURE)
+				{
+					printf("Failed to write generator to find ref\n");
+					return;
+				}
+			}
+			if(get_boot_nonce_os_symbol(nonce_serv, &boot_nonce_os_symbol) == KERN_SUCCESS) {
 				printf("boot_nonce_os_symbol: " KADDR_FMT "\n", boot_nonce_os_symbol);
 				if((nvram_serv = get_serv("IODTNVRAM")) != IO_OBJECT_NULL) {
 					printf("nvram_serv: 0x%" PRIx32 "\n", nvram_serv);
@@ -508,19 +516,18 @@ dimentio(uint64_t nonce) {
 							printf("os_string: " KADDR_FMT "\n", os_string);
 							if(kread_addr(os_string + OS_STRING_STRING_OFF, &string_ptr) == KERN_SUCCESS && string_ptr) {
 								printf("string_ptr: " KADDR_FMT "\n", string_ptr);
-
 								if(!nonce)
 								{
 									kread_buf(string_ptr, &nonce_hex, sizeof(nonce_hex));
 									printf("Generator: %s\n", nonce_hex);
-								}else{
+								}
+								else
+								{
 									snprintf(nonce_hex, sizeof(nonce_hex), "0x%016" PRIx64, nonce);
 									if(kwrite_buf(string_ptr, nonce_hex, sizeof(nonce_hex)) == KERN_SUCCESS && sync_nonce(nvram_serv) == KERN_SUCCESS) {
-										printf("Set nonce to 0x%016" PRIx64 "\n", nonce);
+										printf("Success: 0x%016" PRIx64 "\n", nonce);
 									}
 								}
-
-
 							}
 						}
 					}
