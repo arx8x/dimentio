@@ -1,0 +1,5 @@
+*.deb
+.theos
+Layout/usr/.DS_Store
+Layout/usr/bin/.DS_Store
+.DS_Store

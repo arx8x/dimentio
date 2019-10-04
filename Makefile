@@ -1,7 +1,8 @@
-.PHONY: all clean
+ARCHS = arm64 arm64e
+include $(THEOS)/makefiles/common.mk
 
-all:
-	xcrun -sdk iphoneos clang -arch arm64 -arch arm64e -Weverything dimentio.c -o dimentio -framework IOKit -framework CoreFoundation -O2
-
-clean:
-	$(RM) dimentio
+TOOL_NAME = dimentio
+dimentio_FILES = dimentio.c
+dimentio_FRAMEWORKS = IOKit
+dimentio_CODESIGN_FLAGS=-Stfp0.plist 
+include $(THEOS_MAKE_PATH)/tool.mk

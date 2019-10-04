@@ -1,0 +1,10 @@
+Package: net.arx8x.dimentio
+Name: dimentio
+Depends:
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Read/Write generator on iOS 12 (A12)
+Maintainer: ARX8x
+Author:  0x7ff
+Section: System
+Tag: role::hacker
