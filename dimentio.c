@@ -570,19 +570,22 @@ main(int argc, char **argv) {
 			if((kbase = get_kbase(&kslide))) {
 				printf("kbase: " KADDR_FMT "\n", kbase);
 				printf("kslide: " KADDR_FMT "\n", kslide);
-				if(pfinder_init(&pfinder, kbase) == KERN_SUCCESS) {
-					if(pfinder_init_offsets(pfinder) == KERN_SUCCESS) {
-						if(argc > 1)
-						{
-							sscanf(argv[1], "0x%016" PRIx64, &nonce);
+				if(kslide)
+				{
+					if(pfinder_init(&pfinder, kbase) == KERN_SUCCESS) {
+						if(pfinder_init_offsets(pfinder) == KERN_SUCCESS) {
+							if(argc > 1)
+							{
+								sscanf(argv[1], "0x%016" PRIx64, &nonce);
+							}
+							dimentio(nonce);
+							if(argc == 3 && sscanf(argv[2], "0x%08" PRIx32 "%08" PRIx32 "%08" PRIx32 "%08" PRIx32, &(key[0]), &(key[1]), &(key[2]), &(key[3])) == 4)
+							{
+								entangle_nonce(nonce, key);
+							}
 						}
-						dimentio(nonce);
-						if(argc == 3 && sscanf(argv[2], "0x%08" PRIx32 "%08" PRIx32 "%08" PRIx32 "%08" PRIx32, &(key[0]), &(key[1]), &(key[2]), &(key[3])) == 4)
-						{
-							entangle_nonce(nonce, key);
-						}
+						pfinder_term(&pfinder);
 					}
-					pfinder_term(&pfinder);
 				}
 			}
 			mach_port_deallocate(mach_task_self(), tfp0);
