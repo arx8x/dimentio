@@ -570,6 +570,61 @@ main(int argc, char **argv) {
 			if((kbase = get_kbase(&kslide))) {
 				printf("kbase: " KADDR_FMT "\n", kbase);
 				printf("kslide: " KADDR_FMT "\n", kslide);
+
+				// task_info for tfp0 isn't implemented on Chimera but it makes kbase
+				// availble as an env for jailbreakd
+				// calculated kslide here is 0 and kbase is the static kbase
+				// jailbreakd gets slid kbase. slid kbase - static kbase = kslide
+				if(!kslide)
+				{
+					CFURLRef jailbreakd_plist_url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, CFSTR("/Library/LaunchDaemons/jailbreakd.plist"), kCFURLPOSIXPathStyle, false);
+					if(jailbreakd_plist_url == NULL) return EXIT_FAILURE;
+					if(!CFURLResourceIsReachable(jailbreakd_plist_url, NULL)) return EXIT_FAILURE;
+
+					printf("Invalid kslide; attempting to read from Chimera env\n");
+
+					CFDataRef jailbread_plist_filedata;
+					bool read_err = CFURLCreateDataAndPropertiesFromResource(
+						kCFAllocatorDefault,
+						jailbreakd_plist_url,
+						&jailbread_plist_filedata,
+						NULL,
+						NULL,
+						NULL
+					);
+					CFRelease(jailbreakd_plist_url);
+					if(!read_err)
+					{
+						return EXIT_FAILURE;
+					}
+
+					CFPropertyListRef jailbreakd_plist_data = CFPropertyListCreateWithData(
+						kCFAllocatorDefault,
+						jailbread_plist_filedata,
+						kCFPropertyListImmutable,
+						NULL,
+						NULL
+					);
+
+					if(!jailbreakd_plist_data)
+					{
+						return EXIT_FAILURE;
+					}
+					CFDictionaryRef env_dict = CFDictionaryGetValue(jailbreakd_plist_data, CFSTR("EnvironmentVariables"));
+					if(env_dict == NULL) return EXIT_FAILURE;
+					const char * kbase_string = CFStringGetCStringPtr(CFDictionaryGetValue(env_dict, CFSTR("KernelBase")), kCFStringEncodingUTF8);
+					if(!strlen(kbase_string)) return EXIT_FAILURE;
+					kaddr_t kbase_chimera = strtoull(kbase_string, NULL, 16);
+					if(!kbase_chimera) return EXIT_FAILURE;
+					kslide = kbase_chimera - kbase;
+					if(kslide)
+					{
+						kbase = kbase_chimera;
+					}
+					printf("kbase: " KADDR_FMT "\n", kbase);
+					printf("kslide: " KADDR_FMT "\n", kslide);
+				}
+
 				if(kslide)
 				{
 					if(pfinder_init(&pfinder, kbase) == KERN_SUCCESS) {
